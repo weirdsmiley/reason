@@ -78,6 +78,9 @@ pub struct Paper {
     /// title of the paper. If collisions are detected, an integer will be appended
     /// to the file name.
     pub notepath: Option<PathBuf>,
+
+    /// The path to VimWiki note of the paper.
+    pub wikipath: Option<PathBuf>,
 }
 
 impl Paper {
@@ -151,6 +154,7 @@ impl Paper {
             .unwrap_or_default();
         let filepath = fields.remove("filepath").map(PathBuf::from);
         let notepath = None;
+        let wikipath = None;
 
         Ok(Paper {
             title,
@@ -161,6 +165,7 @@ impl Paper {
             labels,
             filepath,
             notepath,
+            wikipath,
         })
     }
 
@@ -290,6 +295,70 @@ impl Paper {
                 Err(e) => return Err(e.into()),
             };
             Ok(Some(note))
+        }
+    }
+
+    /// Returns the VimWiki path to the wiki.
+    pub fn wikipath(&mut self, config: &Config, create: bool) -> Result<Option<PathBuf>, Fallacy> {
+        let wiki;
+        if let Some(wikipath) = self.wikipath.as_ref() {
+            wiki = {
+                let mut base = config.storage.wiki_dir.clone();
+                base.push(wikipath);
+                base
+            };
+            // A file exists at that path.
+            if wiki.exists() {
+                return Ok(Some(wiki));
+            }
+        }
+        // Paper doesn't have a wiki path.
+        else {
+            if !create {
+                return Ok(None);
+            } else {
+                // Generate filename with nickname, if possible.
+                let file = match self.nickname.clone() {
+                    Some(string) => as_filename(&string),
+                    None => as_filename(&self.title),
+                };
+
+                // Find a filename that doesn't exist.
+                wiki = make_unique_path(&config.storage.wiki_dir, &file, ".wiki");
+                // `note` will never termiante with '..', so `unwrap` will not panic.
+                self.wikipath
+                    .replace(PathBuf::from(wiki.file_name().unwrap()));
+            }
+        }
+
+        if !create {
+            Ok(None)
+        } else {
+            // Create/truncate the note file and fill with default content, that
+            // is, populate the index.wiki with this entry as a linkable wiki.
+            match std::fs::File::create(&wiki) {
+                Ok(mut file) => {
+                    if let Err(e) = write!(
+                        file,
+                        "# {}\n\n- {}\n- {} {}\n\n",
+                        self.title,
+                        self.authors.join(", "),
+                        self.venue,
+                        self.year
+                    ) {
+                        return Err(e.into());
+                    }
+                    /* TODO (vimwiki:auto_toc)
+                    if let Err(e) = write!(
+                        /* write to index.wiki */
+                    ) {
+                        return Err(e.into());
+                    }
+                    */
+                }
+                Err(e) => return Err(e.into()),
+            };
+            Ok(Some(wiki))
         }
     }
 

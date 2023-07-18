@@ -21,6 +21,7 @@ pub struct StorageConfig {
     pub max_history_size: usize,
     pub file_dir: PathBuf,
     pub note_dir: PathBuf,
+    pub wiki_dir: PathBuf, /* Path to VimWiki index */
 }
 
 #[derive(Serialize, Deserialize)]
@@ -55,6 +56,8 @@ impl StorageConfig {
         std::fs::create_dir_all(&self.file_dir)?;
         self.note_dir = expand_tilde(&self.note_dir)?;
         std::fs::create_dir_all(&self.note_dir)?;
+        self.wiki_dir = expand_tilde(&self.wiki_dir)?;
+        std::fs::create_dir_all(&self.wiki_dir)?;
         Ok(())
     }
 }
@@ -150,8 +153,14 @@ impl Default for StorageConfig {
         };
 
         let note_dir = {
-            let mut path = data_dir;
+            let mut path = data_dir.clone();
             path.push("notes");
+            path
+        };
+
+        let wiki_dir = {
+            let mut path = data_dir;
+            path.push("notes/wiki");
             path
         };
 
@@ -161,6 +170,7 @@ impl Default for StorageConfig {
             max_history_size,
             file_dir: file_base_dir,
             note_dir,
+            wiki_dir,
         }
     }
 }
