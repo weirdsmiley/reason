@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::io::Write;
 use std::path::PathBuf;
 
-use comfy_table::{Attribute, Cell, CellAlignment, ContentArrangement, Table};
+use comfy_table::{Attribute, Cell, CellAlignment, Color, ContentArrangement, Table};
 use serde::{Deserialize, Serialize};
 
 use crate::config::Config;
@@ -36,11 +36,40 @@ impl PaperList {
             for col in config.output.table_columns.iter() {
                 row.push(p.field_as_string(col));
             }
-            table.add_row(row);
+
+            let progress = &state.papers[ind].progress;
+
+            match progress {
+                ReadingProgress::Read => {
+                    table.add_row(row.iter().map(|s| Cell::new(s).fg(Color::Green)));
+                }
+                ReadingProgress::InProgress => {
+                    table.add_row(row.iter().map(|s| {
+                        Cell::new(s)
+                            .fg(Color::Yellow)
+                            .add_attribute(Attribute::Reverse)
+                    }));
+                }
+                ReadingProgress::Unread => {
+                    table.add_row(row);
+                }
+            };
         }
 
         table.to_string() + "\n"
     }
+}
+
+/// Keep track of your reading progress.
+///
+/// When a note is created, the progress is updated as `InProgress` and `mark`
+/// command can be used to mark a paper as Read. Default is Unread.
+#[derive(Serialize, Deserialize, Debug, Default)]
+pub enum ReadingProgress {
+    #[default]
+    Unread,
+    InProgress,
+    Read,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -81,6 +110,10 @@ pub struct Paper {
 
     /// The path to VimWiki note of the paper.
     pub wikipath: Option<PathBuf>,
+
+    /// Track reading progress.
+    #[serde(default = "ReadingProgress::default")]
+    pub progress: ReadingProgress,
 }
 
 impl Paper {
@@ -155,6 +188,7 @@ impl Paper {
         let filepath = fields.remove("filepath").map(PathBuf::from);
         let notepath = None;
         let wikipath = None;
+        let progress = ReadingProgress::Unread;
 
         Ok(Paper {
             title,
@@ -166,6 +200,7 @@ impl Paper {
             filepath,
             notepath,
             wikipath,
+            progress,
         })
     }
 

@@ -22,6 +22,7 @@ pub fn execute(
         "exit" => crate::cmd::exit::MAN,
         "ls" => crate::cmd::ls::MAN,
         "man" => crate::cmd::man::MAN,
+        "mark" => crate::cmd::mark::MAN,
         "open" => crate::cmd::open::MAN,
         "printf" => crate::cmd::printf::MAN,
         "pwd" => crate::cmd::pwd::MAN,

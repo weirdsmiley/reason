@@ -9,6 +9,7 @@ mod ed;
 mod exit;
 mod ls;
 mod man;
+mod mark;
 mod open;
 pub mod prelude;
 mod printf;
@@ -70,6 +71,9 @@ pub fn to_executor(command: String) -> Result<ExecuteFn, Fallacy> {
         "set" => Ok(set::execute),
         "touch" => Ok(touch::execute),
         "vimwiki" => Ok(vimwiki::execute),
+        "mark" => Ok(mark::mark::execute),
+        "unmark" => Ok(mark::unmark::execute),
+        "current" => Ok(mark::current::execute),
         "wc" => Ok(wc::execute),
         _ => Err(Fallacy::UnknownCommand(command.to_owned())),
     }
