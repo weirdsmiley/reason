@@ -28,6 +28,8 @@ pub fn execute(
         from_arxiv(url.as_ref(), config)?
     } else if url.contains("usenix") {
         from_usenix(url.as_ref(), config)?
+    } else if url.contains("file://") {
+        from_disk(url.as_ref(), config)?
     } else {
         from_pdf(url.as_ref(), config)?
     };
@@ -38,6 +40,64 @@ pub fn execute(
     Ok(CommandOutput::Papers(PaperList(vec![
         state.papers.len() - 1,
     ])))
+}
+
+fn from_disk(url: &str, config: &Config) -> Result<Paper, Fallacy> {
+    // PDF is present locally, copy it, parse its information and return Paper.
+    println!("Fetching from disk.");
+
+    // Download PDF file.
+    let path = &url[7..];
+    let mut cursor = Cursor::new(std::fs::read(path)?);
+    let mut tmpfile = NamedTempFile::new_in(&config.storage.file_dir)?;
+    std::io::copy(&mut cursor/*get path to pdf*/, &mut tmpfile)?;
+    tmpfile.flush()?;
+
+    // Attempt to parse PDF file.
+    let pdf = pdf::file::File::open(tmpfile.path()).ok();
+
+    // Read the PDF information dictionary and get the specified field.
+    let get_info_field = |field: &str| -> Option<String> {
+        // Parse value from PDF.
+        let value = pdf.as_ref().and_then(|p| {
+            p.trailer
+                .info_dict
+                .as_ref()
+                .and_then(|d| d.get(field)) //.map(trim_primitive));
+                .map(|s| s.to_string().trim().trim_matches('"').to_string())
+        });
+        // We don't need empty values.
+        value.filter(|s| !s.is_empty())
+    };
+
+    let title = ask_for("Title", get_info_field("Title"))?;
+    let authors = ask_for("Comma-separated authors", get_info_field("Author"))?
+        .split(',')
+        .map(|s| s.trim().to_string())
+        .collect();
+    let venue = ask_for("Venue", None)?;
+    let year = ask_for(
+        "Year",
+        get_info_field("CreationDate")
+            .filter(|d| d.to_lowercase().starts_with("d:"))
+            .map(|d| d[2..6].to_string()),
+    )?;
+
+    // Rename named tempfile to appropriate name since we only now
+    // know the title of the PDF.
+    let filename = as_filename(&title);
+    let filepath = make_unique_path(&config.storage.file_dir, &filename, ".pdf");
+    println!("Saving to {:?}.", filepath);
+    std::fs::rename(tmpfile.path(), &filepath)?;
+
+    Ok(Paper {
+        title,
+        authors,
+        venue,
+        year,
+        filepath: Some(filepath),
+        ..Default::default()
+    })
 }
 
 fn from_arxiv(url: &str, config: &Config) -> Result<Paper, Fallacy> {
