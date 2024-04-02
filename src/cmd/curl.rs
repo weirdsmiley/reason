@@ -50,7 +50,7 @@ fn from_disk(url: &str, config: &Config) -> Result<Paper, Fallacy> {
     let path = &url[7..];
     let mut cursor = Cursor::new(std::fs::read(path)?);
     let mut tmpfile = NamedTempFile::new_in(&config.storage.file_dir)?;
-    std::io::copy(&mut cursor/*get path to pdf*/, &mut tmpfile)?;
+    std::io::copy(&mut cursor /*get path to pdf*/, &mut tmpfile)?;
     tmpfile.flush()?;
 
     // Attempt to parse PDF file.

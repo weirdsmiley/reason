@@ -16,6 +16,7 @@ mod printf;
 mod pwd;
 mod rm;
 mod set;
+mod sort;
 mod touch;
 mod vimwiki;
 mod wc;
@@ -69,6 +70,7 @@ pub fn to_executor(command: String) -> Result<ExecuteFn, Fallacy> {
         "ed" => Ok(ed::execute),
         "rm" => Ok(rm::execute),
         "set" => Ok(set::execute),
+        "sort" => Ok(sort::execute),
         "touch" => Ok(touch::execute),
         "vimwiki" => Ok(vimwiki::execute),
         "mark" => Ok(mark::mark::execute),

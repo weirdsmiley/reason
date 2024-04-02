@@ -28,6 +28,7 @@ pub fn execute(
         "pwd" => crate::cmd::pwd::MAN,
         "rm" => crate::cmd::rm::MAN,
         "set" => crate::cmd::set::MAN,
+        "sort" => crate::cmd::sort::MAN,
         "touch" => crate::cmd::touch::MAN,
         "vimwiki" => crate::cmd::vimwiki::MAN,
         "wc" => crate::cmd::wc::MAN,

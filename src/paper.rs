@@ -64,12 +64,25 @@ impl PaperList {
 ///
 /// When a note is created, the progress is updated as `InProgress` and `mark`
 /// command can be used to mark a paper as Read. Default is Unread.
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default, PartialEq)]
 pub enum ReadingProgress {
     #[default]
     Unread,
     InProgress,
     Read,
+}
+
+impl std::str::FromStr for ReadingProgress {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "unread" => Self::Unread,
+            "current" => Self::InProgress,
+            "read" => Self::Read,
+            _ => Self::Unread,
+        })
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
