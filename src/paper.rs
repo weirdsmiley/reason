@@ -47,7 +47,6 @@ impl PaperList {
                     table.add_row(row.iter().map(|s| {
                         Cell::new(s)
                             .fg(Color::Yellow)
-                            .add_attribute(Attribute::Reverse)
                     }));
                 }
                 ReadingProgress::Unread => {
