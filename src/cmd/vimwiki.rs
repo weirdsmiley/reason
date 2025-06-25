@@ -84,6 +84,6 @@ fn build_editor_command(wikis: &[PathBuf], config: &Config) -> Command {
         )),
     ];
 
-    ret.args(&vimwiki_opts[0..]).args(wikis);
+    ret.args(&vimwiki_opts[0..]);
     ret
 }
